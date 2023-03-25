@@ -5,6 +5,7 @@ import argparse, wave, array, math, glob, os, pyaudio, shutil, io
 import numpy as np
 import requests
 import os
+from PIL import Image , ImageDraw, ImageFont
 
 #----------------------------------------------
 #list_of_files = glob.glob('test/*.wav')
@@ -17,6 +18,8 @@ parser.add_argument('-t', action='store', dest='secondi', type=int, help='Inseri
 results = parser.parse_args()
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="./lib/freespeech-374309-5a6c7dd7c7da.json"
+
+contatore =0
 
 # Record in chunks of 1024 samples
 chunk = 1024
@@ -31,7 +34,14 @@ seconds = results.secondi
 #conta file
 folder = 'wav/'
 numero= len([f for f in os.listdir(folder)if os.path.isfile(os.path.join(folder, f))])
-filename = "./wav/"+str(int(numero)+1)+".wav"
+if (int(numero)>=50):
+	contatore = contatore+1
+	filename = "wav/"+str(contatore)+".wav"
+elif (contatore>=50):
+	contatore= 1
+	filename = "wav/"+ str(contatore)+".wav"
+else:
+	filename = "wav/"+str(int(numero)+1)+".wav"
 
 # Create an interface to PortAudio
 pa = pyaudio.PyAudio()
@@ -96,6 +106,7 @@ response = client.recognize(request={"config": config, "audio": audio})
 # Reads the response
 for result in response.results:
     print("Transcript: {}".format(result.alternatives[0].transcript))
+    testicolo = ("{}".format(result.alternatives[0].transcript))
     testone=format(result.alternatives[0].transcript)
     r = requests.get('https://api.telegram.org/bot6022035627:AAHcIt3tXDXXlhWDrGoieUJs1NE8o3Ar7vo/sendMessage?chat_id=-849404497&text='+testone,
                       headers={'Accept': 'application/json'})
@@ -105,6 +116,35 @@ for result in response.results:
     #os.rename('test.wav', format(result.alternatives[0].transcript)+'.wav')
     #os.rename('test.mp3', format(result.alternatives[0].transcript)+'.mp3')
     
+# Crea un'immagine nera di 1920x1080 pixel
+img = Image.new('RGB', (1360, 768), color='black')
+
+# Aggiungi una scritta bianca centrata
+draw = ImageDraw.Draw(img)
+width, height = img.size
+text = testicolo
+font = ImageFont.truetype("/home/raspy/Desktop/vdc/Roboto.ttf", 100)  # Sostituisci "arial.ttf" con il percorso del tuo font
+textwidth, textheight = draw.textsize(text, font)
+x = (width - textwidth) / 2
+y = (height - textheight) / 2
+# Disegna il bordo esterno del testo
+border_width = 5
+for i in range(1, border_width+1):
+    draw.text((x-i, y-i), text, font=font, fill='white')  # In alto a sinistra
+    draw.text((x+i, y-i), text, font=font, fill='white')  # In alto a destra
+    draw.text((x-i, y+i), text, font=font, fill='white')  # In basso a sinistra
+    draw.text((x+i, y+i), text, font=font, fill='white')  # In basso a destra
+
+draw.text((x, y), text, font=font, fill='white')
+
+# Crea una nuova immagine per la scritta rossa con sfondo trasparente
+img_red = Image.new('RGBA', (1360, 768), color=(0, 0, 0, 0))
+draw_red = ImageDraw.Draw(img_red)
+draw_red.text((x, y), text, font=font, fill=(255, 0, 0, 255))
+
+# Salva le due immagini separate
+img.save('scrittabw.png')
+img_red.save('scrittar.png')
 
 file_object = open('testo.txt', 'a')
 file_object.write(format(result.alternatives[0].transcript +", "))

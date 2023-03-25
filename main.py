@@ -16,7 +16,7 @@ import subprocess
 pygame.init()
 WINDOW_WIDTH = 1360
 WINDOW_HEIGHT = 768
-screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))#,pygame.FULLSCREEN,0, 32
+screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.FULLSCREEN,0, 32)#
 screen.fill((255, 255, 255))
 pygame.display.set_caption("Voci Di Corridoio")
 pygame.mouse.set_visible(False)
@@ -25,6 +25,18 @@ labelDisplayC= immagine.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2))
 screen.blit(immagine, labelDisplayC)
 subprocess.Popen(["python", "/home/raspy/Desktop/vdc/audioPlay.py"])
 args = ["-t", "7"]
+
+#Visualizzazione dell'immagine su interfaccia (non viene usata quella di MatPlotLib perché blocca l'esecuziode del loop del programma fino alla sua chiusura)
+immagine = pygame.image.load("grafico.png")
+txtred = pygame.image.load("scrittar.png")
+labelDisplayC= immagine.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2))
+
+labelDisplayD= txtred.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2))
+screen.blit(immagine, labelDisplayC)
+screen.blit(txtred, labelDisplayD)
+#screen.blit(immagine,(0, 0))#commentate questo e provate il codice di sopra per centrare l'immagine se viene decentrata
+pygame.display.update()
+
 running = True
 if __name__ == '__main__':
 	while running==True:
@@ -35,9 +47,27 @@ if __name__ == '__main__':
 
 		#if che si attiva quando la distanza è inferiore agli 80cm
 		if dist < 1200:
-			
+			screen.blit(immagine, labelDisplayC)
+			screen.blit(txtred, labelDisplayD)
+			#screen.blit(immagine,(0, 0))#commentate questo e provate il codice di sopra per centrare l'immagine se viene decentrata
+			pygame.display.update()
+			font = pygame.font.Font(None, 36)
+
+			# crea il testo "caricamento"
+			text = font.render('Caricamento', True, (0, 0, 0))
+
+			# calcola le coordinate per centrare il testo
+			text_x = (WINDOW_WIDTH - text.get_width()) / 2
+			text_y = (WINDOW_HEIGHT - text.get_height()) / 2
+
+			# disegna il testo al centro della finestra
+			screen.blit(text, (text_x, text_y))
+
+			# aggiorna la finestra
+			pygame.display.flip()
 			#Comando che avvia il sottoprogramma che registra l'audio e lo trasforma in testo
-			subprocess.Popen(["python", "/home/raspy/Desktop/vdc/registraAudio.py"]+args)#os.system("python /home/raspy/Desktop/vdc/registraAudio.py -t 7") #Per cambiare il tempo di registrazione cambiare il numero dopo -t (l'unità di tempo sono i secondi)
+			#subprocess.Popen(["python", "/home/raspy/Desktop/vdc/registraAudio.py"]+args)
+			os.system("python /home/raspy/Desktop/vdc/registraAudio.py -t 7") #Per cambiare il tempo di registrazione cambiare il numero dopo -t (l'unità di tempo sono i secondi)
 			
 			#Apertura del file scritto dal sottoprogramma ed inserimento del testo completo nella variabile text
 			with open("testo.txt", "r") as file: 
@@ -45,16 +75,17 @@ if __name__ == '__main__':
 			text = str(df)
 
 			#Generazione del Calligramma tramite la libreria WordCloud e MatPlotLib (documentazione per altre impostazioni https://amueller.github.io/word_cloud/index.html)
-			maschera = np.array(Image.open("/home/raspy/Desktop/vdc/orecchia.png"))
+			maschera = np.array(Image.open("/home/raspy/Desktop/vdc/scrittabw.png"))
 			wordcloud = WordCloud(
 				contour_width=1,
-				contour_color = 'steelblue',
+				contour_color = 'white',
 				width = 1920,
 				height = 1080,
 				background_color ='white',
 				stopwords = STOPWORDS,
 				min_font_size = 5,
-				#mask = maschera
+				font_path='/home/raspy/Desktop/vdc/Roboto.ttf',
+				mask = maschera
 			).generate(text) 
 			#Il codice è scritto così per essere più leggibile, potrebbe essere scritto tutto sulla stessa riga
 			plt.figure(figsize = (13.6, 7.68), facecolor = None)
@@ -68,8 +99,12 @@ if __name__ == '__main__':
 
 			#Visualizzazione dell'immagine su interfaccia (non viene usata quella di MatPlotLib perché blocca l'esecuziode del loop del programma fino alla sua chiusura)
 			immagine = pygame.image.load("grafico.png")
+			txtred = pygame.image.load("scrittar.png")
 			labelDisplayC= immagine.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2))
+
+			labelDisplayD= txtred.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2))
 			screen.blit(immagine, labelDisplayC)
+			screen.blit(txtred, labelDisplayD)
 			#screen.blit(immagine,(0, 0))#commentate questo e provate il codice di sopra per centrare l'immagine se viene decentrata
 			pygame.display.update()
 			time.sleep(0.1)
